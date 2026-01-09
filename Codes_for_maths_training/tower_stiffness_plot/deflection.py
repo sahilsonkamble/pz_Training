@@ -3,6 +3,9 @@ import numpy as np
 from stiffness_matrix import stiff_mat
 import math 
 from Cantilever_defln import cantilever_deflection 
+from mass_matrix import mass_mat
+from scipy.linalg import eigh  
+
 
 # Data
 H = [0, 8.76, 17.52, 26.28, 35.04, 43.8, 52.56, 61.32, 70.08, 78.84, 87.6]
@@ -41,7 +44,7 @@ for i in range(len(H) - 1):  # loop from 0 to len(H)-2
 
 wind_speed = 10
 
-kfa = stiff_mat(E[2:],Ifa[2:],ele_L[2:])
+kfa = stiff_mat(E,Ifa,ele_L)
 
 load = np.zeros(len(H))
 
@@ -61,10 +64,50 @@ def plot_nodes_before_deflectiom():
 plot_nodes_before_deflectiom()
 
 
-def plot_traverse_deflection():
-    Traverse_deflection = cantilever_deflection(kfa,load)
-    plt.plot(Traverse_deflection,H,'x-')
-    plt.title(f"Traverse deflection because of thrust of %0.0f N",load(len(load)))
+def plot_traverse_deflection(H, Traverse_deflection, thrust):
+    plt.figure()
+    plt.plot(Traverse_deflection[:, 0], H, 'x-', label='Deflected Tower')
+    plt.xlabel('Transverse Deflection (m)')
+    plt.ylabel('Tower Height (m)')
+    plt.title(f'Transverse deflection because of thrust of {thrust:.0f} N')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+Traverse_deflection, slope = cantilever_deflection(kfa, load)
+plot_traverse_deflection(H, Traverse_deflection, thrust)
+
+m = mu[1:]  
+Mg = mass_mat(m, ele_L)
+kfa = kfa[2:, 2:]
+Mg = Mg[2:, 2:]
+
+
+
+lambda_vals, V = eigh(kfa, Mg)
+print("Eigenvalues:", lambda_vals)
+
+omega = lambda lmbda: np.sqrt(lmbda)
+omega_vals = omega(lambda_vals)
+
+freq = omega_vals / (2 * math.pi)
+print("Natural frequencies (Hz):", freq)
+
+validlambdas =[]
+# we need the positive lambda values which are corresponding to the actual frequency of the tower and we need to neglect the rigid body motions 
+valid_lambdas = [lam for lam in lambda_vals if lam > 1e-6]
+
+print(valid_lambdas)
+
+#f_natural stores the natural frequencies
+f_natural = np.sqrt(lambda_vals[valid_lambdas]) / (2 * np.pi) 
+modes_FA = V[:, valid_lambdas]                           
+
+#we are selecting the transacctional dofs only
+translational_dofs =  np.arange(0, f_natural.shape[0], 2)  
+
+
+
 
 
 

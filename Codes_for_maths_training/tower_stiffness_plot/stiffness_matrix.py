@@ -1,6 +1,6 @@
 import numpy as np
 def stiff_mat(E, Ifa, ele_L):
-    nDOF = 3
+    nDOF = 2
     n = len(ele_L)  # number of elements
     Ke = np.zeros((n, 2*nDOF, 2*nDOF))
 
@@ -24,4 +24,4 @@ def stiff_mat(E, Ifa, ele_L):
             ids = slice(j*nDOF, (j+2)*nDOF)
             Kg[ids, ids] += Ke[j]
 
-    return Kg, Ke
+    return Kg
