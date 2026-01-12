@@ -20,6 +20,8 @@ def mass_mat(m,ele_L):
 
     Me = np.zeros((n, 4, 4))  # initialize array for element mass matrices
 
+    #building each element mass matrix
+
     for i in range(n):
         factor = m[i] * ele_L[i] / 420
         Me[i, :, :] = factor * np.array([
@@ -28,6 +30,8 @@ def mass_mat(m,ele_L):
         [54, 13*ele_L[i], 156, -22*ele_L[i]],
         [-13*ele_L[i], -3*ele_L[i]**2, -22*ele_L[i], 4*ele_L[i]**2]
     ])
+        
+    #building the assembled global matrix
         if n == 1:
              Mg = Me[0, :, :]  # squeeze in MATLAB is automatic in Python indexing
         else:

@@ -5,6 +5,7 @@ import math
 from Cantilever_defln import cantilever_deflection 
 from mass_matrix import mass_mat
 from scipy.linalg import eigh  
+from Plot_mode_graph import plot_mode_graph
 
 
 # Data
@@ -52,7 +53,7 @@ thrust  = 2*1.225*math.pi*61.5*61.5*wind_speed*wind_speed*(1-0.5)
 
 load[-1] = thrust
 
-def plot_nodes_before_deflectiom():
+def plot_nodes_before_deflection():
     plt.figure()
     plt.plot(np.zeros_like(H), H, 'x-', label='Tower')
     plt.ylabel('Tower height (m)')
@@ -61,7 +62,7 @@ def plot_nodes_before_deflectiom():
     plt.xlim([-2, 2])
     plt.show()
 
-plot_nodes_before_deflectiom()
+plot_nodes_before_deflection()
 
 
 def plot_traverse_deflection(H, Traverse_deflection, thrust):
@@ -82,33 +83,33 @@ Mg = mass_mat(m, ele_L)
 kfa = kfa[2:, 2:]
 Mg = Mg[2:, 2:]
 
-
-
-lambda_vals, V = eigh(kfa, Mg)
+# Solve eigenvalue problem
+lambda_vals, V = eigh(kfa, Mg)  # kfa = stiffness, Mg = mass
 print("Eigenvalues:", lambda_vals)
 
-omega = lambda lmbda: np.sqrt(lmbda)
-omega_vals = omega(lambda_vals)
+# Keep only positive (physical) eigenvalues
+valid_indices = lambda_vals > 1e-6
 
-freq = omega_vals / (2 * math.pi)
-print("Natural frequencies (Hz):", freq)
+lambda_valid = lambda_vals[valid_indices]
+V_valid = V[:, valid_indices]   
 
-validlambdas =[]
-# we need the positive lambda values which are corresponding to the actual frequency of the tower and we need to neglect the rigid body motions 
-valid_lambdas = [lam for lam in lambda_vals if lam > 1e-6]
+# Convert to rad/s
+omega_vals = np.sqrt(lambda_valid)
 
-print(valid_lambdas)
-
-#f_natural stores the natural frequencies
-f_natural = np.sqrt(lambda_vals[valid_lambdas]) / (2 * np.pi) 
-modes_FA = V[:, valid_lambdas]                           
-
-#we are selecting the transacctional dofs only
-translational_dofs =  np.arange(0, f_natural.shape[0], 2)  
+# Convert to Hz
+f_natural = omega_vals / (2 * math.pi)
+print("Natural frequencies (Hz):", f_natural)
 
 
+modes_FA = V_valid            
 
+# Select translational DOFs only (every 2nd DOF)
+translational_dofs = np.arange(0, modes_FA.shape[0], 2)
 
+# Tower bending frequencies (modal → no DOF indexing needed)
+tower_freq = f_natural
 
+# Translational mode shapes
+mode_shapes = modes_FA[translational_dofs, :]
 
-
+plot_mode_graph(mode_shapes,tower_freq,H)
